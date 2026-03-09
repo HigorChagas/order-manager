@@ -1,6 +1,6 @@
 import express from "express";
 import db from "./database.js";
-import { randomBytes } from "crypto";
+import { randomBytes, randomInt } from "crypto";
 
 const app = express();
 app.use(express.json());
@@ -26,6 +26,43 @@ app.post("/order", (req, res) => {
       res.json({
         orderId,
         value,
+      });
+    },
+  );
+});
+
+app.post("/order/:id/items", (req, res) => {
+  const orderId = req.params.id;
+  const productId = randomInt(0, 2000);
+  const { quantity, price } = req.body;
+
+  db.get(
+    "SELECT orderId FROM Orders WHERE orderId = ?",
+    [orderId],
+    (err, order) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      if (!order) {
+        return res.status(404).json({ error: "Pedido não encontrado " });
+      }
+    },
+  );
+
+  db.run(
+    "INSERT INTO Items (orderId, productId, quantity, price) VALUES (?, ?, ?, ?)",
+    [orderId, productId, quantity, price],
+    function (err) {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.json({
+        orderId,
+        productId,
+        quantity,
+        price,
       });
     },
   );
