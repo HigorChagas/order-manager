@@ -71,16 +71,28 @@ app.post("/order/:id/items", (req, res) => {
 app.get("/order/:id", (req, res) => {
   const id = req.params.id;
 
-  db.get(`SELECT * FROM Orders WHERE orderId = ?`, [id], (err, row) => {
+  db.get(`SELECT * FROM Orders WHERE orderId = ?`, [id], (err, order) => {
     if (err) {
       return res.status(500).json(err);
     }
 
-    if (!row) {
+    if (!order) {
       return res.status(404).json({ error: "Pedido não encontrado" });
     }
 
-    res.json(row);
+    db.all(
+      "SELECT productId, quantity, price FROM Items WHERE orderId = ?",
+      [id],
+      (err, items) => {
+        if (err) {
+          return res.status(500).json(err);
+        }
+
+        order.items = items;
+
+        res.json(order);
+      },
+    );
   });
 });
 
