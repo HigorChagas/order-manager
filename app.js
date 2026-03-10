@@ -33,8 +33,7 @@ app.post("/order", (req, res) => {
 
 app.post("/order/:id/items", (req, res) => {
   const orderId = req.params.id;
-  const productId = randomInt(0, 2000);
-  const { quantity, price } = req.body;
+  const { productId, quantity, price } = req.body;
 
   db.get(
     "SELECT orderId FROM Orders WHERE orderId = ?",
@@ -45,25 +44,25 @@ app.post("/order/:id/items", (req, res) => {
       }
 
       if (!order) {
-        return res.status(404).json({ error: "Pedido não encontrado " });
-      }
-    },
-  );
-
-  db.run(
-    "INSERT INTO Items (orderId, productId, quantity, price) VALUES (?, ?, ?, ?)",
-    [orderId, productId, quantity, price],
-    function (err) {
-      if (err) {
-        return res.status(500).json(err);
+        return res.status(404).json({ error: "Pedido não encontrado" });
       }
 
-      res.json({
-        orderId,
-        productId,
-        quantity,
-        price,
-      });
+      db.run(
+        "INSERT INTO Items (orderId, productId, quantity, price) VALUES (?, ?, ?, ?)",
+        [orderId, productId, quantity, price],
+        function (err) {
+          if (err) {
+            return res.status(500).json(err);
+          }
+
+          res.json({
+            orderId,
+            productId,
+            quantity,
+            price,
+          });
+        },
+      );
     },
   );
 });
@@ -97,12 +96,22 @@ app.get("/order/:id", (req, res) => {
 });
 
 app.get("/orders", (req, res) => {
-  db.all("SELECT * FROM Orders", [], (err, rows) => {
+  db.all("SELECT * FROM Orders", [], (err, orders) => {
     if (err) {
       return res.status(500).json(err);
     }
 
-    res.json(rows);
+    db.all("SELECT * FROM Items", [], (err, items) => {
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      for (let order of orders) {
+        order.items = items.filter((item) => item.orderId === order.orderId);
+      }
+
+      res.json(orders);
+    });
   });
 });
 
