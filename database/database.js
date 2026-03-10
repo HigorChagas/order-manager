@@ -13,11 +13,11 @@ db.serialize(() => {
 
   db.run(`
     CREATE TABLE IF NOT EXISTS Items (
-      orderId INTEGER,
+      orderId TEXT,
       productId INTEGER,
       quantity INTEGER,
       price REAL,
-      FOREIGN KEY(orderId) REFERENCES Orders(orderId)
+      FOREIGN KEY(orderId) REFERENCES Orders(orderId) ON DELETE CASCADE
     )
   `);
 });
